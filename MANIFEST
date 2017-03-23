@@ -2,12 +2,12 @@
 Changes
 lib/Test/Class/Moose/History.pm
 lib/Test/Class/Moose/History/Report.pm
+lib/Test/Class/Moose/History/Role/Database.pm
 Makefile.PL
 MANIFEST			This list of files
 README
 README.md
 t/00-load.t
-t/manifest.t
 t/tcm.t
 t/tests/TestsFor/Base.pm
 t/tests/TestsFor/Test/Class/Moose/History.pm

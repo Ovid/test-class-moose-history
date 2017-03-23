@@ -9,38 +9,9 @@ use Sys::Hostname 'hostname';
 use namespace::autoclean;
 use Test::Class::Moose::History::Report;
 
+with qw(Test::Class::Moose::History::Role::Database);
+
 our $VERSION = '0.01';
-
-has 'database_file' => (
-    is      => 'ro',
-    isa     => 'Str',
-    lazy    => 1,
-    builder => '_build_database_file',
-);
-
-sub _build_database_file {
-    return $ENV{PERL_TCM_HISTORY_DB} // '.perl_tcm_history.db';
-}
-
-has '_dbh' => (
-    is        => 'ro',
-    isa       => 'DBI::db',
-    predicate => 'database_used',
-    lazy      => 1,
-    builder   => '_build_dbh',
-);
-
-sub _build_dbh {
-    my $self   = shift;
-    my $dbfile = $self->database_file;
-    return DBI->connect(
-        "dbi:SQLite:dbname=$dbfile",
-        "", "",
-        {   RaiseError => 1,
-            AutoCommit => 0,
-        }
-    );
-}
 
 has 'runner' => (
     is  => 'ro',
@@ -89,9 +60,7 @@ has 'report' => (
 sub _build_report {
     my $self = shift;
     return Test::Class::Moose::History::Report->new(
-        {   dbh => $self->_dbh,
-        }
-    );
+        { _dbh => $self->_dbh } );
 }
 
 has [qw/branch commit/] => (

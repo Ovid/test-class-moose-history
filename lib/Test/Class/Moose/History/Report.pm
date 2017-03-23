@@ -2,12 +2,20 @@ package Test::Class::Moose::History::Report;
 use Moose;
 use namespace::autoclean;
 use DateTime;
+use Carp;
 
-has 'dbh' => (
-    is       => 'ro',
-    isa      => 'DBI::db',
-    required => 1,
-);
+with qw(Test::Class::Moose::History::Role::Database);
+
+sub BUILD {
+    my $self   = shift;
+    my $tables = $self->_dbh->selectall_arrayref("SELECT * FROM sqlite_master WHERE type='table';");
+    unless (@$tables) {
+        my $database = $self->database_file;
+        croak(
+            "Database '$database' appears to be empty. Have you run Test::Class::Moose::History->save yet?"
+        );
+    }
+}
 
 sub top_failures {
     my ( $self, $arg_for ) = @_;
@@ -40,7 +48,7 @@ GROUP BY tm.name
 ORDER BY count(*) desc
    LIMIT ?;
 SQL
-    my $results = $self->dbh->selectall_arrayref( $sql, {}, @args );
+    my $results = $self->_dbh->selectall_arrayref( $sql, {}, @args );
     my @headers
       = $show_branch
       ? (qw/class test branch first last errs/)
@@ -52,7 +60,7 @@ SQL
 sub last_failures {
     my ($self) = @_;
 
-    my $test_run_id = $self->dbh->selectcol_arrayref(<<'SQL')->[0];
+    my $test_run_id = $self->_dbh->selectcol_arrayref(<<'SQL')->[0];
     SELECT max(tr.test_run_id)
       FROM test_run tr
       JOIN test     t ON tr.test_run_id = t.test_run_id
@@ -70,14 +78,14 @@ SQL
    WHERE t.passed   = 0
      AND tr.test_run_id = ?
 SQL
-    return $self->dbh->selectall_arrayref( $sql, {}, $test_run_id );
+    return $self->_dbh->selectall_arrayref( $sql, {}, $test_run_id );
 }
 
 sub last_test_status {
     my $self = shift;
 
     # gets the last runtime information for each test in our database
-    return $self->dbh->selectall_arrayref(<<'SQL');
+    return $self->_dbh->selectall_arrayref(<<'SQL');
     SELECT tc.name, tm.name, t.runtime, t.passed
       FROM test t
       JOIN test_method tm ON t.test_method_id = tm.test_method_id
