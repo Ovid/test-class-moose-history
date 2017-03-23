@@ -107,8 +107,11 @@ Test::Class::Moose::History::Report - Get report history
 
 =head1 SYNOPSIS
 
-    # don't instantiate directly
-    my $report = Test::Class::Moose::History->new->report;
+    my $report = Test::Class::Moose::History::Report->new;
+    my $last_failures = $report->last_failures;
+
+See C<Test::Class::Moose::History> to understand how to add data to the
+report. The constructor will C<croak> if no report tables are found.
 
 =head1 METHODS
 
@@ -124,7 +127,6 @@ Test::Class::Moose::History::Report - Get report history
     say generate_table( rows => $failures, header_row => 1 );
 
 Returns an array reference of tests which fail the most.
-
 
 =head2 C<last_failures>
 

@@ -316,7 +316,6 @@ recognize. A stringified C<DateTime> value works well.
 
 Same as C<start>, but representing the end time of the test suite.
 
-
 =head2 C<branch>
 
 The name of the branch the tests were run on. By default, this value is
