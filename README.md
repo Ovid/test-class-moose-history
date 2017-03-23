@@ -1,9 +1,3 @@
-# DISCLAIMER
-
-This is a quick 'n dirty port of production code from [Tau
-Station](https://taustation.space/). It's worked very well for us there.
-That's all I can say :)
-
 # NAME
 
 Test::Class::Moose::History - track test history over time
@@ -42,7 +36,7 @@ See `Test::Class::Moose::History::Report` for report options.
 
 # DESCRIPTION
 
-This is all a nasty hack. You've been warned. It's used to store and retrieve
+This is a bit of a hack. You've been warned. It's used to store and retrieve
 test state history for `Test::Class::Moose` test suites.
 
 The data is stored in an SQLite database. By default, this is located at

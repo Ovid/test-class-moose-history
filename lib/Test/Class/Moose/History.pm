@@ -276,7 +276,7 @@ See C<Test::Class::Moose::History::Report> for report options.
 
 =head1 DESCRIPTION
 
-This is all a nasty hack. You've been warned. It's used to store and retrieve
+This is a bit of a hack. You've been warned. It's used to store and retrieve
 test state history for C<Test::Class::Moose> test suites.
 
 The data is stored in an SQLite database. By default, this is located at
