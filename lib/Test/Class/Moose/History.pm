@@ -7,8 +7,7 @@ use Carp 'croak';
 use DateTime;
 use Sys::Hostname 'hostname';
 use namespace::autoclean;
-
-#use Test::Class::Moose::History::Report;
+use Test::Class::Moose::History::Report;
 
 our $VERSION = '0.01';
 
@@ -108,7 +107,7 @@ sub save {
 
     my @results;
     foreach my $class ( $runner->test_report->all_test_classes ) {
-        my $test = package_to_filename( $class->name );
+        my $test = $class->name;
         foreach my $instance ( $class->all_test_instances ) {
             for my $method ( $instance->all_test_methods ) {
                 my $method_name = $method->name;
@@ -128,7 +127,7 @@ sub _save_results {
     my ( $self, $results ) = @_;
     $self->_create_tables_if_not_exists;
     my $test_run_id = $self->_add_test_run;
-    $self->_add_test_files_and_methods($results);
+    $self->_add_test_classes_and_methods($results);
     $self->_add_test_results( $test_run_id, $results );
     $self->_dbh->commit;
 }
@@ -139,8 +138,8 @@ sub _add_test_run {
     my $user   = getpwuid($<);
 
     my $sql = <<'SQL';
-    INSERT INTO test_run (start_date, end_date, hostname, user, git_branch, git_commit)
-    VALUES               (         ?,        ?,        ?,    ?,          ?,          ?)
+    INSERT INTO test_run (start_date, end_date, hostname, user, source_branch, source_commit)
+    VALUES               (         ?,        ?,        ?,    ?,             ?,             ?)
 SQL
 
     $self->_dbh->do(
@@ -152,41 +151,41 @@ SQL
       ; # http://search.cpan.org/~ishigaki/DBD-SQLite-1.50/lib/DBD/SQLite.pm#$dbh->sqlite_last_insert_rowid()
 }
 
-sub _add_test_files_and_methods {
+sub _add_test_classes_and_methods {
     my ( $self, $results ) = @_;
 
     my $dbh = $self->_dbh;
     foreach my $result (@$results) {
-        my $filename = $result->{test};
+        my $name = $result->{test};
         my $method   = $result->{method};
-        my ( $test_file_id, $test_method_id );
+        my ( $test_class_id, $test_method_id );
         my $id = $dbh->selectrow_arrayref(
-            "SELECT test_file_id FROM test_file WHERE filename = ?", {},
-            $filename
+            "SELECT test_class_id FROM test_class WHERE name = ?", {},
+            $name
         );
         if ( $id && $id->[0] ) {
-            $test_file_id = $id->[0];
+            $test_class_id = $id->[0];
         }
         else {
             $dbh->do(
-                "INSERT INTO test_file (filename) VALUES ( ? )",
-                {}, $filename,
+                "INSERT INTO test_class (name) VALUES ( ? )",
+                {}, $name,
             );
-            $test_file_id = $dbh->last_insert_id( '', '', '', '' );
+            $test_class_id = $dbh->last_insert_id( '', '', '', '' );
         }
-        $result->{test_file_id} = $test_file_id;
+        $result->{test_class_id} = $test_class_id;
         $id = $dbh->selectrow_arrayref(
-            "SELECT test_method_id FROM test_method WHERE name = ? AND test_file_id = ?",
+            "SELECT test_method_id FROM test_method WHERE name = ? AND test_class_id = ?",
             {},
-            $method, $test_file_id
+            $method, $test_class_id
         );
         if ( $id && $id->[0] ) {
             $test_method_id = $id->[0];
         }
         else {
             $dbh->do(
-                "INSERT INTO test_method (name,test_file_id) VALUES ( ?, ? )",
-                {}, $method, $test_file_id,
+                "INSERT INTO test_method (name,test_class_id) VALUES ( ?, ? )",
+                {}, $method, $test_class_id,
             );
             $test_method_id = $dbh->last_insert_id( '', '', '', '' );
         }
@@ -218,32 +217,32 @@ sub _create_tables_if_not_exists {
 
     $dbh->do(<<'SQL');
     CREATE TABLE IF NOT EXISTS test_run (
-      test_run_id INTEGER PRIMARY KEY AUTOINCREMENT,
-      start_date  DATETIME NOT NULL,
-      end_date    DATETIME NOT NULL,
-      hostname    TEXT NOT NULL,
-      user        TEXT NOT NULL,
-      git_branch  TEXT NOT NULL,
-      git_commit  TEXT NOT NULL
+      test_run_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+      start_date    DATETIME NOT NULL,
+      end_date      DATETIME NOT NULL,
+      hostname      TEXT NOT NULL,
+      user          TEXT NOT NULL,
+      source_branch TEXT NOT NULL,
+      source_commit TEXT NOT NULL
     );
 SQL
     $dbh->do(<<'SQL');
-    CREATE TABLE IF NOT EXISTS test_file (
-      test_file_id INTEGER PRIMARY KEY AUTOINCREMENT,
-      filename     TEXT NOT NULL
+    CREATE TABLE IF NOT EXISTS test_class (
+      test_class_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name          TEXT NOT NULL
     );
 SQL
 
-    # XXX Warning: don't try to create a lookup table between files and
-    # methods. It *looks* like one file can have many methods and many
-    # methods could be in several files, but in reality, the names might
-    # be the same, but that does not mean identity.
+	# XXX Warning: don't try to create a lookup table between classes and
+	# methods. It *looks* like one class can have many methods and many methods
+	# could be in several classes, but in reality, the names might be the
+	# same, but that does not mean identity.
     $dbh->do(<<'SQL');
     CREATE TABLE IF NOT EXISTS test_method (
       test_method_id INTEGER PRIMARY KEY AUTOINCREMENT,
-      test_file_id INTEGER NOT NULL,
-      name        TEXT NOT NULL,
-      FOREIGN KEY (test_file_id) REFERENCES test_file(test_file_id)
+      test_class_id  INTEGER NOT NULL,
+      name           TEXT NOT NULL,
+      FOREIGN KEY (test_class_id) REFERENCES test_class(test_class_id)
     );
 SQL
     $dbh->do(<<'SQL');

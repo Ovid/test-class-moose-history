@@ -7,10 +7,11 @@ WriteMakefile(
     'NAME'         => 'Test::Class::Moose::History',
     'VERSION_FROM' => 'lib/Test/Class/Moose/History.pm',
     'PREREQ_PM'    => {
-        "Moose"                => 0,
+        "Test::Class::Moose"   => 0.55,
         "DBI"                  => 0,
         "DateTime"             => 0,
-        "namespace::autoclean" => .28,
+        "namespace::autoclean" => 0.28,
+        "Text::Table::Tiny"    => 0.04,
     },
     'INSTALLDIRS' => 'site',
     'EXE_FILES'   => [],
@@ -20,8 +21,8 @@ WriteMakefile(
         resources   => {
             repository => {
                 type => 'git',
-                url  => 'https://github.com/Ovid/test-class-moose-history.git',
-                web  => 'https://github.com/Ovid/test-class-moose-history',
+                url => 'https://github.com/Ovid/test-class-moose-history.git',
+                web => 'https://github.com/Ovid/test-class-moose-history',
             },
         },
     },

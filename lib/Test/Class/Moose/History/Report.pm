@@ -17,22 +17,21 @@ sub top_failures {
     my $show_branch = $arg_for->{show_branch} // 0;
     my $branch      = '';
     my @args;
-    my $git_branch = '';
 
     if ( $arg_for->{branch} ) {
-        $branch = "AND git_branch = ?";
+        $branch = "AND source_branch = ?";
         push @args => $arg_for->{branch};
     }
     if ($show_branch) {
-        $git_branch = 'git_branch,';
+        $branch = 'source_ranch,';
     }
     push @args =>
       ( DateTime->now->subtract( days => $days_ago )->ymd, $limit );
     my $sql = <<"SQL";
-  SELECT tf.filename, tm.name, $git_branch min(start_date), max(start_date), count(*)
+  SELECT tc.name, tm.name, $branch min(start_date), max(start_date), count(*)
     FROM test t 
     JOIN test_method tm on t.test_method_id = tm.test_method_id 
-    JOIN test_file   tf on tf.test_file_id  = tm.test_file_id
+    JOIN test_class  tc on tc.test_class_id = tm.test_class_id
     JOIN test_run    tr on tr.test_run_id   = t.test_run_id
    WHERE t.passed   = 0
          $branch
@@ -60,14 +59,13 @@ sub last_failures {
      WHERE t.passed = 0
 SQL
     unless ( defined $test_run_id ) {
-        warn "No failing tests runs found";
-        return;
+        return [];
     }
     my $sql = <<"SQL";
-  SELECT tf.filename, tm.name
+  SELECT tc.name, tm.name
     FROM test t 
     JOIN test_method tm on t.test_method_id = tm.test_method_id 
-    JOIN test_file   tf on tf.test_file_id  = tm.test_file_id
+    JOIN test_class  tc on tc.test_class_id = tm.test_class_id
     JOIN test_run    tr on tr.test_run_id   = t.test_run_id
    WHERE t.passed   = 0
      AND tr.test_run_id = ?
@@ -79,13 +77,13 @@ sub last_test_status {
     my $self = shift;
 
     # gets the last runtime information for each test in our database
-    return $self->_dbh->selectall_arrayref(<<'SQL');
-    SELECT tf.filename, tm.name, t.runtime, t.passed
+    return $self->dbh->selectall_arrayref(<<'SQL');
+    SELECT tc.name, tm.name, t.runtime, t.passed
       FROM test t
       JOIN test_method tm ON t.test_method_id = tm.test_method_id
-      JOIN test_file   tf ON tm.test_file_id  = tf.test_file_id
+      JOIN test_class  tc ON tm.test_class_id = tc.test_class_id
       JOIN test_run    tr ON t.test_run_id    = tr.test_run_id
-  GROUP BY tm.name, tf.filename
+  GROUP BY tm.name, tc.name
   ORDER BY tr.start_date DESC
 SQL
 }
@@ -111,7 +109,7 @@ Test::Class::Moose::History::Report - Get report history
     use Text::Table::Tiny 'generate_table';
     my $failures = Test::Class::Moose::History->new->report->top_failures({
         limit    => $limit,      # integer, defaults to 10
-        branch   => $git_branch, # optional
+        branch   => $branch,     # optional
         days_ago => $integer,    # optional, default 365
         headers  => $boolean,    # add header row
     });
@@ -124,7 +122,7 @@ Returns an array reference of tests which fail the most.
 
     my $last_failures = $report->last_failures;
     foreach my $failure (@$last_failures) {
-        my ( $test_class_filename, $test_method_name ) = @$failure;
+        my ( $test_class_name, $test_method_name ) = @$failure;
         ...
     }
 
