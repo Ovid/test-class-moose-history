@@ -7,11 +7,32 @@ use Test::Class::Moose::Load 't/tests';
 use Test::Class::Moose::Runner;
 use Test::Class::Moose::History;
 use Text::Table::Tiny 'generate_table';
+use List::MoreUtils 'uniq';
 use Getopt::Long;
-GetOptions( report => \my $report ) or die "Bad options";
+GetOptions(
+    report   => \my $report,
+    failures => \my $failures,
+          ) or die "Bad options";
 
-my $runner = Test::Class::Moose::Runner->new;
+my @tc_files;
+if ($failures) {
+    my $rpt        = Test::Class::Moose::History::Report->new;
+    my $last_failures = $rpt->last_failures;
+    $rpt->_dbh->disconnect();
+
+#   Give me the test_classes in the report
+#        last_failures    => [qw/Class Method/],
+#   A test_class can have more the one method fail
+    @tc_files = uniq map { $_->[0] } @$last_failures;
+}
+
+my $runner = Test::Class::Moose::Runner->new(
+    statistics   => 1,
+#    test_classes => \@tc_files,
+    );
+
 $runner->runtests;
+
 
 if ($report) {
 
