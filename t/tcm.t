@@ -28,7 +28,7 @@ if ($failures) {
 
 my $runner = Test::Class::Moose::Runner->new(
     statistics   => 1,
-#    test_classes => \@tc_files,
+    test_classes => \@tc_files,
     );
 
 $runner->runtests;
