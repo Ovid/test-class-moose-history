@@ -4,33 +4,36 @@ Test::Class::Moose::History - track test history over time
 
 # SYNOPSIS
 
-    my $runner = Test::Class::Moose::Runner->new( %opts );
+```perl
+my $runner = Test::Class::Moose::Runner->new( %opts );
 
-    # get current branch and latest commit id
-    # example assumes `git`, but you can use any info you need here
-    chomp( my $branch = `git rev-parse --abbrev-ref HEAD` );
-    chomp( my $commit = `git rev-parse HEAD` );
+# get current branch and latest commit id
+# example assumes `git`, but you can use any info you need here
+chomp( my $branch = `git rev-parse --abbrev-ref HEAD` );
+chomp( my $commit = `git rev-parse HEAD` );
 
-    $runner->runtests;
+$runner->runtests;
 
-    my $history = Test::Class::Moose::History->new(
-        runner => $runner,
-        branch => $branch,
-        commit => $commit,
-    );
-    $history->save;
+my $history = Test::Class::Moose::History->new(
+  runner => $runner,
+  branch => $branch,
+  commit => $commit,
+);
+$history->save;
+```
 
 Later:
 
-    # print report of top failures for last 30 days
-    use Text::Table::Tiny 'generate_table';
-    my $report   = Test::Class::Moose::History->new->report;
-    my $failures = $report->top_failures(
-        {   days_ago => 30,    # optional
-            headers  => 1,
-        }
-    );
-    say generate_table( rows => $failures, header_row => 1 );
+```perl
+# print report of top failures for last 30 days
+use Text::Table::Tiny 'generate_table';
+my $report   = Test::Class::Moose::History->new->report;
+my $failures = $report->top_failures({
+  days_ago => 30,    # optional
+  headers  => 1,
+});
+say generate_table( rows => $failures, header_row => 1 );
+```
 
 See `Test::Class::Moose::History::Report` for report options.
 
